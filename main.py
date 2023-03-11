@@ -1,3 +1,5 @@
+#Criptografia AES em Python
+
 #Tem que instalar a biblioteca no terminal antes - pip install pycryptodome
 
 from Crypto.Cipher import AES
