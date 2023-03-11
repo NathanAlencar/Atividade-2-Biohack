@@ -1,60 +1,66 @@
-#Criptografia AES em Python
+import random
+import math
 
-#Tem que instalar a biblioteca no terminal antes - pip install pycryptodome
+def generate_keypair(p, q):
+    n = p * q
+    phi = (p - 1) * (q - 1)
+    e = random.randrange(1, phi)
+    g = math.gcd(e, phi)
+    while g != 1:
+        e = random.randrange(1, phi)
+        g = math.gcd(e, phi)
+    d = mod_inverse(e, phi)
+    return ((e, n), (d, n))
 
-from Crypto.Cipher import AES
-from Crypto.Random import get_random_bytes
-
-def encrypt_message():
-    
-    key = get_random_bytes(16)
-    iv = get_random_bytes(16)
-
-   
-    cipher = AES.new(key, AES.MODE_CBC, iv)
-
-    data = input("Insira a mensagem a ser criptografada: ").encode()
-
-
-    padded_data = data + b"\0" * (AES.block_size - len(data) % AES.block_size)
-
-    
-    encrypted_data = cipher.encrypt(padded_data)
-
-   
-    print("Chave: ", key.hex())
-    print("IV: ", iv.hex())
-    print("Dados criptografados: ", encrypted_data.hex())
-
-
-def decrypt_message():
-    
-    key = bytes.fromhex(input("Insira a chave em formato hexadecimal: "))
-
-    iv = bytes.fromhex(input("Insira o IV em formato hexadecimal: "))
-
-    decrypt_cipher = AES.new(key, AES.MODE_CBC, iv)
-
-    encrypted_data = bytes.fromhex(input("Insira os dados criptografados em formato hexadecimal: "))
-
-    decrypted_data = decrypt_cipher.decrypt(encrypted_data)
-
-    unpadded_data = decrypted_data.rstrip(b"\0")
-
-    print("Mensagem decifrada: ", unpadded_data.decode())
-
-
-while True:
-    print("Escolha uma opção:")
-    print("1 - Criptografar mensagem com chave aleatória")
-    print("2 - Descriptografar mensagem com chave fornecida")
-    choice = input("Opção: ")
-
-    if choice == "1":
-        encrypt_message()
-        break
-    elif choice == "2":
-        decrypt_message()
-        break
+def mod_inverse(a, m):
+    gcd, x, y = extended_euclidean_algorithm(a, m)
+    if gcd != 1:
+        return None  
     else:
-        print("Opção inválida. Tente novamente.")
+        return x % m
+
+def extended_euclidean_algorithm(a, b):
+    if a == 0:
+        return (b, 0, 1)
+    else:
+        gcd, x, y = extended_euclidean_algorithm(b % a, a)
+        return (gcd, y - (b // a) * x, x)
+
+def encrypt(pk, plaintext):
+    e, n = pk
+    cipher = [(ord(char) ** e) % n for char in plaintext]
+    return cipher
+
+def decrypt(pk, ciphertext):
+    d, n = pk
+    plain = [chr((char ** d) % n) for char in ciphertext]
+    return ''.join(plain)
+
+p = 61
+q = 53
+
+
+public_key, private_key = generate_keypair(p, q)
+
+print("Escolha uma opção:")
+print("1. Criptografar uma mensagem com a chave pública")
+print("2. Descriptografar uma mensagem com a chave privada")
+opcao = input("Opção escolhida: ")
+
+if opcao == "1":
+    
+    message = input("Digite a mensagem a ser criptografada: ")
+    ciphertext = encrypt(public_key, message)
+    print("Mensagem cifrada:", ciphertext)
+elif opcao == "2":
+    
+    ciphertext = input("Digite a mensagem cifrada: ")
+    d = int(input("Digite a chave privada d: "))
+    n = int(input("Digite a chave privada n: "))
+    private_key = (d, n)
+    
+    
+    plaintext = decrypt(private_key, ciphertext)
+    print("Mensagem decifrada:", plaintext)
+else:
+    print("Opção inválida. Por favor, escolha 1 ou 2.")
